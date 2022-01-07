@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net5.0</TargetFramework>
+        <WarnOn>3390;$(WarnOn)</WarnOn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="AssemblyInfo.fs" />
+        <Compile Include="Heap.fs" />
+        <Compile Include="Tries.fs" />
+        <Compile Include="TriesVisitor.fs" />
+        <Compile Include="Operation.fs" />
+        <Compile Include="Levenstein.fs" />
+        <Compile Include="QueryResult.fs" />
+        <Compile Include="Query.fs" />
+        <Compile Include="LevensteinMap.fs" />
+        <Compile Include="Demo\ConsoleIOLoop.fs" />
+        <Compile Include="Demo\GenerateExampleFile.fs" />
+        <Compile Include="Program.fs" />
+        <Content Include="exampleWords.txt" />
+    </ItemGroup>
+
+</Project>
