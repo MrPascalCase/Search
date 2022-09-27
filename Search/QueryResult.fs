@@ -31,13 +31,19 @@ type public QueryResult =
         Console.WriteLine()
 
 let internal assembleQueryResult (l: Levenshtein) (word: string) (query: string) (searchTime: TimeSpan) =
+    let takeOperation node =
+        match node with
+        | Root _ -> None
+        | Node n -> Some n.operation
+
     { word = word
       query = query
-      distance = l.cost
-      edits = l.Ancestors
-                  |> List.map (fun x -> x.operation.Operation)
-                  |> List.rev
-                  |> List.skip 1 // RootNode
+      distance = getCost l
+      edits =
+        l
+        |> ancestors
+        |> List.choose takeOperation
+        |> List.rev
       searchTime = searchTime
       openNodes = 0
       closedNodes = 0 }

@@ -14,7 +14,9 @@ type internal SearchResultWithContext =
       searchTime : TimeSpan }
 
 let internal enumerateResults (t: Tries) (query: string) (cost : Operation -> double) =
-    let mutable heap = Heap.empty |> Heap.insert (empty (emptyVisitor t))
+    let mutable heap = Heap.empty (getCost)
+                       |> Heap.insert (Root (emptyVisitor t))
+                       
     let mutable openNodes = 1
     let mutable closedNodes = 1
     let stopwatch = System.Diagnostics.Stopwatch.StartNew ()

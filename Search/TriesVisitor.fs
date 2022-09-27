@@ -2,7 +2,7 @@ module Search.TriesVisitor
 
 open Search.Tries
 
-type internal TriesVisitor(parent: TriesVisitor option, node: Tries, character: char) =
+type TriesVisitor(parent: TriesVisitor option, node: Tries, character: char) =
     member this.Node = node
     member this.Parent = parent
     member this.Character = character

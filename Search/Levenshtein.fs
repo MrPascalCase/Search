@@ -1,76 +1,74 @@
 module Search.Levenshtein
 
-open System
 open Search.TriesVisitor
 open Search.Operation
 
-[<CustomComparison; CustomEquality>]
-type internal Levenshtein =
-    { parent: Levenshtein option
-      operation: OperationWithTriesContext
+// type OperationWithTriesContext(operation: Operation, tries: TriesVisitor option) =
+//     do
+//         // Class invariant
+//         match (operation, tries) with
+//         | Match x, Some t when x = t.Character -> () // ok
+//         | Substitution (x, y), Some t when x = t.Character && y <> x -> () // ok
+//         | Discard _, None -> () // ok
+//         | Generation x, Some t when x = t.Character -> () // ok
+//         | _ -> failwith "Assert class invariant failed."
+//
+//     member this.Operation = operation
+//     member this.Tries = tries
+
+type Node =
+    { parent: Levenshtein
+      tries: TriesVisitor
+      operation: Operation
       cost: double }
-    member this.IsRoot = this.parent = None
 
-    member this.Ancestors =
-        this
-        :: (match this.parent with
-            | Some parent -> parent.Ancestors
-            | None -> [])
+and Levenshtein =
+    | Root of TriesVisitor
+    | Node of Node
 
-    override this.Equals other =
-        match other with
-        | :? Levenshtein as p -> (this :> IComparable<_>).Equals p
-        | _ -> failwith ""
+let getCost l =
+    match l with
+    | Root _ -> 0.0
+    | Node n -> n.cost
 
-    interface IComparable with
-        member this.CompareTo other =
-            match other with
-            | :? Levenshtein as p -> (this :> IComparable<_>).CompareTo p
-            | _ -> failwith ""
+let rec ancestors l =
+    match l with
+    | Root _ -> []
+    | Node n -> l :: (ancestors n.parent)
 
-    interface IComparable<Levenshtein> with
-        member this.CompareTo other = this.cost.CompareTo other.cost
-
-    interface IEquatable<Levenshtein> with
-        member this.Equals(other: Levenshtein) : bool = this.cost.Equals other.cost
-
-    override this.GetHashCode() = failwith "Not supported."
-
-
-let internal empty (t: TriesVisitor) =
-    { parent = None
-      operation = OperationWithTriesContext(NoOperation, Some t)
-      cost = 0.0 }
-
-let private getLastTries (l: Levenshtein) : TriesVisitor = l.Ancestors |> List.pick (fun x -> x.operation.Tries)
+let tries l =
+    match l with
+    | Root t -> t
+    | Node n -> n.tries
 
 let private countQueryAdvance (l: Levenshtein) =
-    let getOperation (x: Levenshtein) = x.operation.Operation
+    let getOperation (x: Levenshtein) =
+        match x with
+        | Root _ -> None
+        | Node n -> Some n.operation
 
     let doesConsumeQuery op =
         match op with
-        | Match _ -> true
-        | Substitution _ -> true
-        | Discard _ -> true
+        | Some (Match _) -> true
+        | Some (Substitution _) -> true
+        | Some (Discard _) -> true
         | _ -> false
 
-    l.Ancestors
+    l
+    |> ancestors
     |> List.filter (getOperation >> doesConsumeQuery)
     |> List.length
 
 let internal isFinal l (query: string) = countQueryAdvance l = query.Length
 
-let rec private getContinuations (l: Levenshtein) : seq<TriesVisitor> =
-    (l.Ancestors
-     |> Seq.pick (fun n -> n.operation.Tries))
-     |> TriesVisitor.continuations
+let rec private getContinuations (l: Levenshtein) : seq<TriesVisitor> = (tries l |> continuations)
 
 let rec private merge (element: Levenshtein) (sequence: Levenshtein seq) =
     seq {
         match Seq.tryHead sequence with
         | None -> yield element
         | Some head ->
-            if element.cost <= head.cost then
+            if getCost element <= getCost head then
                 yield element
                 yield! sequence
             else
@@ -86,10 +84,13 @@ type private SuccessorTypes =
     | NoGeneration
 
 let private getSuccessorTypes (l: Levenshtein) =
-    match l.operation.Operation with
-    | Discard _ -> NoGeneration
-    | Generation _ -> NoDiscard
-    | _ -> All
+    match l with
+    | Root _ -> All
+    | Node n ->
+        match n.operation with
+        | Discard _ -> NoGeneration
+        | Generation _ -> NoDiscard
+        | _ -> All
 
 let private getMatch (l: Levenshtein) (c: char) (cost: Operation -> double) =
     let matchingChar (x: TriesVisitor) = x.Character = c
@@ -100,52 +101,49 @@ let private getMatch (l: Levenshtein) (c: char) (cost: Operation -> double) =
     seq {
         if matchingContinuation.IsSome then
             yield
-                { parent = Some l
-                  operation = OperationWithTriesContext(Match c, matchingContinuation)
-                  cost = l.cost + cost (Match c) }
+                Node
+                    { parent = l
+                      operation = Match c
+                      tries = matchingContinuation.Value
+                      cost = getCost l + (cost (Match c)) }
     }
 
 let private getSubstitutions (l: Levenshtein) (c: char) (cost: Operation -> double) =
     let createNode (visitor: TriesVisitor) =
         let op = Substitution(visitor.Character, c)
-
-        let opContext =
-            OperationWithTriesContext(op, Some visitor)
-
-        { parent = Some l
-          operation = opContext
-          cost = l.cost + (cost op) }
+        Node
+            { parent = l
+              operation = op
+              tries = visitor
+              cost = getCost l + (cost op) }
 
     (getContinuations l)
     |> Seq.filter (fun x -> x.Character <> c)
     |> Seq.map createNode
-    |> Seq.sort 
+    |> Seq.sortBy getCost
 
 let private getDiscard (l: Levenshtein) (c: char) (cost: Operation -> double) : Levenshtein =
     let op = Discard c
-    let opContext = OperationWithTriesContext(op, None)
-
-    { parent = Some l
-      operation = opContext
-      cost = l.cost + (cost op) }
+    Node
+        { parent = l
+          operation = op
+          tries = tries l
+          cost = getCost l + (cost op) }
 
 let rec private getGenerations (l: Levenshtein) (c: char) (cost: Operation -> double) : Levenshtein seq =
     let createNode (visitor: TriesVisitor) =
         let op = Generation(visitor.Character)
-
-        let opContext =
-            OperationWithTriesContext(op, Some visitor)
-
-        { parent = Some l
-          operation = opContext
-          cost = l.cost + (cost op) }
+        Node
+            { parent = l
+              operation = op
+              tries = visitor
+              cost = getCost l + (cost op) }
 
     (getContinuations l)
     |> Seq.map createNode
     |> Seq.collect (fun l -> getSuccessors l c cost)
 
 and private getSuccessors (l: Levenshtein) (c: char) (cost: Operation -> double) : Levenshtein seq =
-    
     seq {
         yield! (getMatch l c cost)
         yield! (getSubstitutions l c cost) // Substitutions have Cost <= 1
@@ -155,11 +153,11 @@ and private getSuccessors (l: Levenshtein) (c: char) (cost: Operation -> double)
         | NoGeneration -> yield (getDiscard l c cost)
         | All -> yield! merge (getDiscard l c cost) (getGenerations l c cost)
     }
-//|> Seq.sortBy (fun l -> l.Cost)
 
-let internal Successors (l: Levenshtein) (query : string) (cost: Operation -> double) : Levenshtein seq =
-        let nextQueryChar = query.Substring(countQueryAdvance l).Chars 0
-        getSuccessors l nextQueryChar cost
-    
-let internal getResults : Levenshtein -> seq<string> =
-    getLastTries >> TriesVisitor.getResults
+let internal Successors (l: Levenshtein) (query: string) (cost: Operation -> double) : Levenshtein seq =
+    let nextQueryChar =
+        query.Substring(countQueryAdvance l).Chars 0
+
+    getSuccessors l nextQueryChar cost
+
+let internal getResults (l: Levenshtein) : seq<string> = getResults (tries l)

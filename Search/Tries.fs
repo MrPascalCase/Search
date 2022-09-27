@@ -1,14 +1,14 @@
 module Search.Tries
 
-type internal Tries =
+type Tries =
     { Continuations: Map<char, Tries>
       IsResult: bool }
 
-let internal emptyTries =
+let emptyTries =
     { Continuations = Map.empty
       IsResult = false }
 
-let internal add (key: string) (tries: Tries) : Tries =
+let add (key: string) (tries: Tries) : Tries =
     let rec addRec (word: char list) (tries: Tries) : Tries =
         match word with
         | [] ->

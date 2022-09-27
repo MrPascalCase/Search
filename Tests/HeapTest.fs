@@ -3,10 +3,12 @@ module Tests.HeapTest
 open NUnit.Framework
 open Search
 
+let identity x = x
+
 [<Test>]
 let Test_1_insert () =
     let h =
-        Heap.empty
+        Heap.empty identity 
         |> Heap.insert 1
         
     Assert.AreEqual(1, Heap.min h)  
@@ -14,7 +16,7 @@ let Test_1_insert () =
 [<Test>]
 let Test_2_inserts () =
     let h =
-        Heap.empty 
+        Heap.empty identity 
         |> Heap.insert 1
         |> Heap.insert 0
         
@@ -23,7 +25,7 @@ let Test_2_inserts () =
 [<Test>]
 let Test_emptyHeap () =
     let h =
-        Heap.empty<int> 
+        Heap.empty identity 
         |> Heap.insert 1
         |> Heap.removeMin
         
@@ -32,7 +34,7 @@ let Test_emptyHeap () =
 [<Test>]
 let Test_1_Remove () =
     let h =
-        Heap.empty<int>
+        Heap.empty identity
         |> Heap.removeMin
         
     Assert.AreEqual (0, h.Count) 
@@ -40,7 +42,7 @@ let Test_1_Remove () =
 [<Test>]
 let Test_3_inserts () =
     let h =
-        Heap.empty<int>
+        Heap.empty identity
         |> Heap.insert 1
         |> Heap.insert 0
         |> Heap.insert -1
@@ -50,7 +52,7 @@ let Test_3_inserts () =
 [<Test>]
 let Test_3_inserts_1_Remove () =
     let h =
-        Heap.empty 
+        Heap.empty identity 
         |> Heap.insert 1
         |> Heap.insert 0
         |> Heap.insert -1
@@ -61,7 +63,7 @@ let Test_3_inserts_1_Remove () =
 [<Test>]
 let Test_Mixed_inserts_Removes () =
     let h =
-        Heap.empty<int> 
+        Heap.empty identity 
         |> Heap.insert 1
         |> Heap.insert 0
         |> Heap.removeMin
@@ -74,7 +76,7 @@ let Test_Mixed_inserts_Removes () =
 [<Test>]
 let Test_inserts_All_Removed () =
     let h =
-        Heap.empty<int> 
+        Heap.empty identity 
         |> Heap.insert 1
         |> Heap.insert 0
         |> Heap.insert -1
@@ -87,7 +89,7 @@ let Test_inserts_All_Removed () =
 [<Test>]
 let Test_Mixed_inserts_Removes_2 () =
     let h =
-        Heap.empty<int>
+        Heap.empty identity
         |> Heap.insert 1
         |> Heap.insert 0
         |> Heap.insert 0
@@ -104,7 +106,7 @@ let Test_Mixed_inserts_Removes_2 () =
 [<Test>]
 let Test_ToString () =
     let h =
-        Heap.empty<int>
+        Heap.empty identity
         |> Heap.insert 1
         |> Heap.insert 0
         |> Heap.insert 2
@@ -131,7 +133,7 @@ type CmpDummy =
 [<Test>]
 let Test_Custom_Compare () =
     let h =
-        Heap.empty<CmpDummy>
+        Heap.empty identity
         |> Heap.insert B
         |> Heap.insert C
         |> Heap.insert A
@@ -141,7 +143,7 @@ let Test_Custom_Compare () =
 [<Test>]
 let Test_Custom_Compare_With_Remove () =
     let h =
-        Heap.empty<CmpDummy>
+        Heap.empty identity
         |> Heap.insert B
         |> Heap.insert C
         |> Heap.insert A
@@ -152,7 +154,7 @@ let Test_Custom_Compare_With_Remove () =
 [<Test>]
 let Test_Custom_Compare_With_2_Removes () =
     let h =
-        Heap.empty<CmpDummy>
+        Heap.empty identity
         |> Heap.insert B
         |> Heap.insert C
         |> Heap.insert A

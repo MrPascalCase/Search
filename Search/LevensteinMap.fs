@@ -10,7 +10,6 @@ let public StdCostFunction (op: Operation) : double =
     | Substitution _ -> 1.0
     | Discard _ -> 1.0
     | Generation _ -> 1.0
-    | _ -> failwith "Not supported."
 
 type public LevenshteinMap private (t: Tries.Tries, costFunction: Operation -> double) =
     member internal this.Tries: Tries.Tries = t
