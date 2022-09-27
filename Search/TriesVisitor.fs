@@ -2,16 +2,10 @@ module Search.TriesVisitor
 
 open Search.Tries
 
-
-type internal TriesVisitor<'a>(parent: TriesVisitor<'a> option, node: Tries<'a>, character: char) =
+type internal TriesVisitor(parent: TriesVisitor option, node: Tries, character: char) =
     member this.Node = node
     member this.Parent = parent
     member this.Character = character
-
-    member this.Continuations: TriesVisitor<'a> seq =
-        this.Node.Continuations
-        |> Map.toSeq
-        |> Seq.map (fun (k, v) -> (TriesVisitor(Some this, v, k)))
 
     member this.Ancestors =
         this
@@ -26,13 +20,17 @@ type internal TriesVisitor<'a>(parent: TriesVisitor<'a> option, node: Tries<'a>,
         |> List.map (fun n -> n.Character.ToString())
         |> String.concat ""
 
+let rec internal continuations (t : TriesVisitor) : TriesVisitor seq =
+        t.Node.Continuations
+        |> Map.toSeq
+        |> Seq.map (fun (k, v) -> TriesVisitor(Some t, v, k))
 
-let internal emptyVisitor (t: Tries<'a>) = TriesVisitor(None, t, '\000')
+let internal emptyVisitor (t: Tries) = TriesVisitor(None, t, '\000')
 
-let rec internal getResults<'a> (t: TriesVisitor<'a>) : seq<string * 'a> =
+let rec internal getResults (t: TriesVisitor) : seq<string> =
     seq {
-        yield! t.Node.Results |> List.map (fun x -> (t.Word, x))
+        if t.Node.IsResult then yield t.Word
 
-        for child in t.Continuations do
+        for child in continuations t do
             yield! (getResults child)
     }

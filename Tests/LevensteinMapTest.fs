@@ -1,7 +1,7 @@
 module Tests.LevensteinMapTest
 
 open NUnit.Framework
-open Search.Levenstein
+open Search.Levenshtein
 open Search.LevensteinMap
 open Tests.ExpectedQueryResult
 open Search.Operation
@@ -9,14 +9,14 @@ open Search.Operation
 [<Test>]
 let Test_Match_a () =
     // Arrange
-    let map = LevensteinMap.empty |> LevensteinMap.add "a" 1
+    let map = LevenshteinMap.empty |> LevenshteinMap.add "a"
     
     // Act
-    let results = map |> LevensteinMap.query "a"
+    let results = map |> LevenshteinMap.query "a"
 
     // Assert
     AssertResults
-        [ { value = 1
+        [ { word = "a"
             distance = 0.0
             edits = [ Match 'a' ] } ]
         results
@@ -24,14 +24,14 @@ let Test_Match_a () =
 [<Test>]
 let Test_Match_ab () =
     // Arrange
-    let map = LevensteinMap.empty |> LevensteinMap.add "ab" 1
+    let map = LevenshteinMap.empty |> LevenshteinMap.add "ab"
     
     // Act
-    let results = map |> LevensteinMap.query "ab"
+    let results = map |> LevenshteinMap.query "ab"
 
     // Assert
     AssertResults
-        [ { value = 1
+        [ { word = "ab"
             distance = 0.0
             edits = [ Match 'a'; Match 'b' ] } ]
         results
@@ -40,14 +40,14 @@ let Test_Match_ab () =
 let Test_Match_abc () =
     // Arrange
     let map =
-        LevensteinMap.empty |> LevensteinMap.add "abc" 1
+        LevenshteinMap.empty |> LevenshteinMap.add "abc"
         
     // Act
-    let results = map |> LevensteinMap.query "abc"
+    let results = map |> LevenshteinMap.query "abc"
 
     // Assert
     AssertResults
-        [ { value = 1
+        [ { word = "abc"
             distance = 0.0
             edits = [ Match 'a'; Match 'b'; Match 'c' ] } ]
         results
@@ -55,14 +55,14 @@ let Test_Match_abc () =
 [<Test>]
 let Test_Substitute_a_for_b () =
     // Arrange
-    let map = LevensteinMap.empty |> LevensteinMap.add "a" 1
+    let map = LevenshteinMap.empty |> LevenshteinMap.add "a"
     
     // Act
-    let results = map |> LevensteinMap.query "b"
+    let results = map |> LevenshteinMap.query "b"
 
     // Assert
     AssertResults
-        [ { value = 1
+        [ { word = "a"
             distance = 1.0
             edits = [ Substitution('a', 'b') ] } ]
         results
@@ -71,19 +71,19 @@ let Test_Substitute_a_for_b () =
 let Test_Match_a_or_Substitute_b_for_a () =
     // Arrange
     let map =
-        LevensteinMap.empty 
-        |> LevensteinMap.add "ac" 1
-        |> LevensteinMap.add "bc" 2
+        LevenshteinMap.empty 
+        |> LevenshteinMap.add "ac" 
+        |> LevenshteinMap.add "bc" 
         
     // Act
-    let results = map |> LevensteinMap.query "ac"
+    let results = map |> LevenshteinMap.query "ac"
 
     // Assert
     AssertResults
-        [ { value = 1
+        [ { word = "ac"
             distance = 0.0
             edits = [ Match 'a'; Match 'c' ] }
-          { value = 2
+          { word = "bc"
             distance = 1.0
             edits = [ Substitution('b', 'a'); Match 'c' ] } ]
         results
@@ -92,14 +92,14 @@ let Test_Match_a_or_Substitute_b_for_a () =
 let Test_in_word_substitution () =
     // Arrange
     let map =
-        LevensteinMap.empty |> LevensteinMap.add "abccba" 1
+        LevenshteinMap.empty |> LevenshteinMap.add "abccba"
         
     // Act
-    let results = map |> LevensteinMap.query "abddba"
+    let results = map |> LevenshteinMap.query "abddba"
 
     // Assert
     AssertResults
-        [ { value = 1
+        [ { word = "abccba"
             distance = 2.0
             edits =
                 [ Match 'a'
@@ -114,14 +114,14 @@ let Test_in_word_substitution () =
 let Test_in_word_discard () =
     // Arrange
     let map =
-        LevensteinMap.empty |> LevensteinMap.add "abba" 1
+        LevenshteinMap.empty |> LevenshteinMap.add "abba"
 
     // Act
-    let results = map |> LevensteinMap.query "abddba"
+    let results = map |> LevenshteinMap.query "abddba"
 
     // Assert
     AssertResults
-        [ { value = 1
+        [ { word = "abba"
             distance = 2.0
             edits =
                 [ Match 'a'
@@ -136,14 +136,14 @@ let Test_in_word_discard () =
 let Test_in_word_generate () =
     // Arrange
     let map =
-        LevensteinMap.empty |> LevensteinMap.add "abccba" 1
+        LevenshteinMap.empty |> LevenshteinMap.add "abccba"
 
     // Act
-    let results = map |> LevensteinMap.query "abba"
+    let results = map |> LevenshteinMap.query "abba"
 
     // Assert
     AssertResults
-        [ { value = 1
+        [ { word = "abccba"
             distance = 2.0
             edits =
                 [ Match 'a'

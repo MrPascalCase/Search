@@ -12,19 +12,19 @@ let public StdCostFunction (op: Operation) : double =
     | Generation _ -> 1.0
     | _ -> failwith "Not supported."
 
-type public LevensteinMap<'a> private (t: Tries.Tries<'a>, costFunction: Operation -> double) =
-    member internal this.Tries: Tries.Tries<'a> = t
+type public LevenshteinMap private (t: Tries.Tries, costFunction: Operation -> double) =
+    member internal this.Tries: Tries.Tries = t
     member internal this.CostFunction = costFunction
 
-    static member public empty: LevensteinMap<'a> =
-        LevensteinMap(Tries.emptyTries, StdCostFunction)
+    static member public empty: LevenshteinMap =
+        LevenshteinMap(Tries.emptyTries, StdCostFunction)
 
-    static member public withCostFunction (costFunction: Operation -> double) (map: LevensteinMap<'a>) =
-        LevensteinMap(map.Tries, costFunction)
+    static member public addCostFunction (costFunction: Operation -> double) (map: LevenshteinMap) =
+        LevenshteinMap(map.Tries, costFunction)
 
-    static member public add<'a> (key: string) (value: 'a) (map: LevensteinMap<'a>) : LevensteinMap<'a> =
-        let newTries = map.Tries |> Tries.add key value
-        LevensteinMap(newTries, map.CostFunction)
+    static member public add<'a> (key: string) (map: LevenshteinMap) : LevenshteinMap =
+        let newTries = map.Tries |> Tries.add key 
+        LevenshteinMap(newTries, map.CostFunction)
 
-    static member public query<'a> (key: string) (map: LevensteinMap<'a>) : QueryResult<'a> seq =
+    static member public query (key: string) (map: LevenshteinMap) : QueryResult seq =
         Query.enumerateResults map.Tries key map.CostFunction

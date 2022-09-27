@@ -7,19 +7,18 @@ open Search.QueryResult
 open Search.TriesVisitor
 open Search.Operation
 open Search.Tries
-open Search.Levenstein
+open Search.Levenshtein
 
-type internal SearchResultWithContext<'a> =
-    { result: 'a
-      pathToResult: Levenstein<'a>
+type internal SearchResultWithContext =
+    { pathToResult: Levenshtein
       searchTime : TimeSpan }
 
-let internal enumerateResults (t: Tries<'a>) (query: string) (cost : Operation -> double) =
-    let mutable heap = Heap.empty |> Heap.insert (Levenstein.empty (emptyVisitor t))
+let internal enumerateResults (t: Tries) (query: string) (cost : Operation -> double) =
+    let mutable heap = Heap.empty |> Heap.insert (empty (emptyVisitor t))
     let mutable openNodes = 1
     let mutable closedNodes = 1
     let stopwatch = System.Diagnostics.Stopwatch.StartNew ()
-    let hashset = new HashSet<'a>()
+    let hashset = new HashSet<string>()
     
     seq {
         while heap.Count > 0 do
@@ -31,10 +30,10 @@ let internal enumerateResults (t: Tries<'a>) (query: string) (cost : Operation -
                 let results = getResults min
                 yield!
                     results
-                    |> Seq.filter (fun r -> not (hashset.Contains(snd r)))
-                    |> Seq.map (fun x -> assembleQueryResult min (fst x) (snd x) query stopwatch.Elapsed)
+                    |> Seq.filter (fun r -> not (hashset.Contains(r)))
+                    |> Seq.map (fun x -> assembleQueryResult min x query stopwatch.Elapsed)
 
-                hashset.UnionWith(results |> Seq.map snd)
+                hashset.UnionWith(results)
             else
                 let successors = (Successors min query cost)
                 for x in successors do

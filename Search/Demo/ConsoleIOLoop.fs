@@ -6,14 +6,14 @@ open Search.LevensteinMap
 type State =
     { currentQuery: string
       doExit: bool
-      map: LevensteinMap<string>
+      map: LevenshteinMap
       resultShowCount: int }
 
 let Init (results: string list) : State =
-    let mutable dictionary = LevensteinMap.empty
-    
+    let mutable dictionary = LevenshteinMap.empty
+
     for result in results do
-        dictionary <- dictionary |> LevensteinMap.add result result
+        dictionary <- dictionary |> LevenshteinMap.add result
 
     { currentQuery = ""
       doExit = false
@@ -26,7 +26,7 @@ let Show state =
 
     let results =
         state.map
-        |> LevensteinMap.query state.currentQuery 
+        |> LevenshteinMap.query state.currentQuery
         |> Seq.truncate state.resultShowCount
 
     for result in results do
@@ -47,10 +47,10 @@ let ReadKey state =
     let setExit state = { state with doExit = true }
 
     let appendCharToQuery character state =
-        { state with
-              currentQuery = state.currentQuery + character.ToString() }
-        
+        { state with currentQuery = state.currentQuery + character.ToString() }
+
     let info = Console.ReadKey()
+
     match info.Key with
     | ConsoleKey.Backspace -> shortenCurrentQueryEnd state
     | ConsoleKey.Escape -> setExit state

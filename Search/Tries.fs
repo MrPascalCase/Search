@@ -1,25 +1,24 @@
 module Search.Tries
 
-type internal Tries<'a> =
-    { Continuations: Map<char, Tries<'a>>
-      Results: 'a list }
+type internal Tries =
+    { Continuations: Map<char, Tries>
+      IsResult: bool }
 
 let internal emptyTries =
     { Continuations = Map.empty
-      Results = [] }
+      IsResult = false }
 
-let internal add (key: string) (value: 'a) (tries: Tries<'a>) : Tries<'a> =
-    let rec addRec (word: char list) (value: 'a) (tries: Tries<'a>) : Tries<'a> =
+let internal add (key: string) (tries: Tries) : Tries =
+    let rec addRec (word: char list) (tries: Tries) : Tries =
         match word with
         | [] ->
-            { tries with
-                  Results = value :: tries.Results }
+            { tries with IsResult = true }
         | firstLetter :: restWord ->
             if not (Map.containsKey firstLetter tries.Continuations) then
                 let newChild =
                     { Continuations = Map.empty
-                      Results = [] }
-                    |> addRec restWord value
+                      IsResult = false }
+                    |> addRec restWord
 
                 { tries with
                       Continuations =
@@ -34,22 +33,8 @@ let internal add (key: string) (value: 'a) (tries: Tries<'a>) : Tries<'a> =
                               (fun d ->
                                   match d with
                                   | None -> None
-                                  | Some d -> Some(addRec restWord value d)) }
+                                  | Some d -> Some(addRec restWord d)) }
 
-    addRec (key |> Seq.toList) value tries
-
-
-
-//let allWords (t: Tries<'a>) : (string * 'a) list =
-//    let rec AllNodes (x: Tries<'a>) : Tries<'a> list =
-//        x
-//        :: (x.Continuations
-//            |> Map.toList
-//            |> List.map snd
-//            |> List.collect AllNodes)
-//
-//    t
-//    |> AllNodes
-//    |> List.collect (fun n -> n.Results |> List.map (fun p -> (n.Word, p)))
+    addRec (key |> Seq.toList) tries
 
 

@@ -40,7 +40,7 @@ type public Operation =
         Console.Write(this.GetDisplayCharacter())
         Console.ForegroundColor <- currentForeground
 
-type internal OperationWithTriesContext<'a>(operation: Operation, tries: TriesVisitor<'a> option) =
+type internal OperationWithTriesContext(operation: Operation, tries: TriesVisitor option) =
     do
         // Class invariant
         match (operation, tries) with

@@ -1,12 +1,11 @@
 module Search.QueryResult
 
 open System
-open Search.Levenstein
+open Search.Levenshtein
 open Search.Operation
 
-type public QueryResult<'a> =
-    { key: string
-      value: 'a
+type public QueryResult =
+    { word: string
       query: string
       distance: double
       edits: Operation list
@@ -20,20 +19,19 @@ type public QueryResult<'a> =
             + String.concat ", " (this.edits |> List.map (fun x -> x.ToString()))
             + "]"
 
-        $"Value={this.value.ToString()}, Distance={this.distance}, Edits={operations}"
+        $"Word={this.word}, Distance={this.distance}, Edits={operations}"
 
     member this.WriteToConsoleLine() =
         for edit in this.edits do
             edit.WriteToConsole()
 
         Console.Write $" Distance={this.distance}"
-        Console.Write $" Value={this.value.ToString()}"
+        Console.Write $" Word={this.word}"
         Console.Write $" ({this.searchTime.TotalMilliseconds}ms)"
         Console.WriteLine()
 
-let internal assembleQueryResult (l: Levenstein<'a>) (key: string) (value: 'a) (query: string) (searchTime: TimeSpan) =
-    { key = key
-      value = value
+let internal assembleQueryResult (l: Levenshtein) (word: string) (query: string) (searchTime: TimeSpan) =
+    { word = word
       query = query
       distance = l.cost
       edits = l.Ancestors
